@@ -10,6 +10,7 @@ import numpy as np
 from PIL import Image
 from yolo import YOLO
 
+
 from deep_sort import preprocessing
 from deep_sort import nn_matching
 from deep_sort.detection import Detection
