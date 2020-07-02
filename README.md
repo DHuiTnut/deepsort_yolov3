@@ -1,6 +1,6 @@
-视频全量分析与建模
+软件杯赛题——视频全量分析与建模
 
-# Some excellent related work
+# YOLOv3模型构建
    1, https://github.com/xingyizhou/CenterTrack
    
    2, https://github.com/phil-bergmann/tracking_wo_bnw
