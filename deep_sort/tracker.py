@@ -55,7 +55,7 @@ class Tracker:
         for track in self.tracks:
             track.predict(self.kf)
 
-    def update(self, detections):
+    def update(self, detections, class_IDs):
         """Perform measurement update and track management.
 
         Parameters
@@ -64,7 +64,7 @@ class Tracker:
             A list of detections at the current time step.
 
         """
-        # Run matching cascade.
+        # Run matching cascade.           级联匹配
         matches, unmatched_tracks, unmatched_detections = \
             self._match(detections)
 
@@ -72,10 +72,18 @@ class Tracker:
         for track_idx, detection_idx in matches:
             self.tracks[track_idx].update(
                 self.kf, detections[detection_idx])
+        print("print (matched_tracks_idx,matched_dets_idx):")              # 输出匹配列表
+        print(matches)
+
         for track_idx in unmatched_tracks:
             self.tracks[track_idx].mark_missed()
+
         for detection_idx in unmatched_detections:
-            self._initiate_track(detections[detection_idx])
+            self._initiate_track(detections[detection_idx],class_IDs[detection_idx])
+            # class_nums[class_IDs[detection_idx]] += 1               # 更新该类别总数（加上新检测到的物体）
+        print("print unmatched_dets_idx:")
+        print(unmatched_detections)                               # 输出未匹配上的检测列表
+
         self.tracks = [t for t in self.tracks if not t.is_deleted()]
 
         # Update distance metric.
@@ -102,19 +110,19 @@ class Tracker:
 
             return cost_matrix
 
-        # Split track set into confirmed and unconfirmed tracks.
+        # Split track set into confirmed and unconfirmed tracks.  分离状态分别为确认、未确认的跟踪目标
         confirmed_tracks = [
             i for i, t in enumerate(self.tracks) if t.is_confirmed()]
         unconfirmed_tracks = [
             i for i, t in enumerate(self.tracks) if not t.is_confirmed()]
 
-        # Associate confirmed tracks using appearance features.
+        # Associate confirmed tracks using appearance features.  使用外观特征关联已确认的跟踪。
         matches_a, unmatched_tracks_a, unmatched_detections = \
             linear_assignment.matching_cascade(
                 gated_metric, self.metric.matching_threshold, self.max_age,
                 self.tracks, detections, confirmed_tracks)
 
-        # Associate remaining tracks together with unconfirmed tracks using IOU.
+        # Associate remaining tracks together with unconfirmed tracks using IOU.  使用IOU将剩余的跟踪与未确认的跟踪联系在一起。
         iou_track_candidates = unconfirmed_tracks + [
             k for k in unmatched_tracks_a if
             self.tracks[k].time_since_update == 1]
@@ -130,9 +138,9 @@ class Tracker:
         unmatched_tracks = list(set(unmatched_tracks_a + unmatched_tracks_b))
         return matches, unmatched_tracks, unmatched_detections
 
-    def _initiate_track(self, detection):
+    def _initiate_track(self, detection,class_id):
         mean, covariance = self.kf.initiate(detection.to_xyah())
         self.tracks.append(Track(
-            mean, covariance, self._next_id, self.n_init, self.max_age,
+            mean, covariance, self._next_id, self.n_init, self.max_age,class_id,
             detection.feature))
         self._next_id += 1

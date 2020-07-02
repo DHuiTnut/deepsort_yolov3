@@ -30,7 +30,7 @@ class Track:
         Covariance matrix of the initial state distribution.
     track_id : int
         A unique track identifier.
-    n_init : int
+    n_init : int                                                   # 跟踪被确认前连续检测的次数（状态标识阈值）
         Number of consecutive detections before the track is confirmed. The
         track state is set to `Deleted` if a miss occurs within the first
         `n_init` frames.
@@ -48,22 +48,22 @@ class Track:
     covariance : ndarray
         Covariance matrix of the initial state distribution.
     track_id : int
-        A unique track identifier.
+        A unique track identifier.       # 唯一的跟踪标识符
     hits : int
-        Total number of measurement updates.
+        Total number of measurement updates.    # 追踪帧数
     age : int
-        Total number of frames since first occurance.
+        Total number of frames since first occurance.  # 自第一次出现以来的总帧数。
     time_since_update : int
-        Total number of frames since last measurement update.
+        Total number of frames since last measurement update.  # 丢失的帧总数。
     state : TrackState
-        The current track state.
+        The current track state.                   # 当前跟踪状态
     features : List[ndarray]
         A cache of features. On each measurement update, the associated feature
-        vector is added to this list.
-
+        vector is added to this list.           # 特征的缓存。在每次度量更新中，关联的特征向量被添加到这个列表中。
+    class_id : 改跟踪对应的类别
     """
 
-    def __init__(self, mean, covariance, track_id, n_init, max_age,
+    def __init__(self, mean, covariance, track_id, n_init, max_age,class_id,
                  feature=None):
         self.mean = mean
         self.covariance = covariance
@@ -71,7 +71,7 @@ class Track:
         self.hits = 1
         self.age = 1
         self.time_since_update = 0
-
+        self.class_id = class_id
         self.state = TrackState.Tentative
         self.features = []
         if feature is not None:
