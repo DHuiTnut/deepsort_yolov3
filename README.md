@@ -1,4 +1,4 @@
-QQ group: 姿态检测＆跟踪 781184396
+视频全量分析与建模
 
 # Some excellent related work
    1, https://github.com/xingyizhou/CenterTrack
