@@ -18,6 +18,7 @@ from PIL import Image, ImageFont, ImageDraw
 from yolo3.model import yolo_eval
 from yolo3.utils import letterbox_image
 
+
 class YOLO(object):
     def __init__(self):
         self.model_path = 'model_data/yolo.h5'
@@ -28,7 +29,7 @@ class YOLO(object):
         self.class_names = self._get_class()
         self.anchors = self._get_anchors()
         self.sess = K.get_session()
-        self.model_image_size = (416, 416) # fixed size or (None, None)
+        self.model_image_size = (416, 416)  # fixed size or (None, None)
         self.is_fixed_size = self.model_image_size != (None, None)
         self.boxes, self.scores, self.classes = self.generate()
 
@@ -66,16 +67,18 @@ class YOLO(object):
         random.seed(None)  # Reset seed to default.
 
         # Generate output tensor targets for filtered bounding boxes.
-        self.input_image_shape = K.placeholder(shape=(2, ))
+        self.input_image_shape = K.placeholder(shape=(2,))  #K.placeholder:keras中的占位符
+        # yolo_eval():yolo评估函数
         boxes, scores, classes = yolo_eval(self.yolo_model.output, self.anchors,
-                len(self.class_names), self.input_image_shape,
-                score_threshold=self.score, iou_threshold=self.iou)
+                                           len(self.class_names), self.input_image_shape,
+                                           score_threshold=self.score, iou_threshold=self.iou)
         return boxes, scores, classes
 
     def detect_image(self, image):
         if self.is_fixed_size:
-            assert self.model_image_size[0]%32 == 0, 'Multiples of 32 required'
-            assert self.model_image_size[1]%32 == 0, 'Multiples of 32 required'
+            #assert断言语句的语法格式 model_image_size[0][1]指图像的w和h，且必须是32的整数倍
+            assert self.model_image_size[0] % 32 == 0, 'Multiples of 32 required'
+            assert self.model_image_size[1] % 32 == 0, 'Multiples of 32 required'
             boxed_image = letterbox_image(image, tuple(reversed(self.model_image_size)))
         else:
             new_image_size = (image.width - (image.width % 32),
@@ -83,39 +86,49 @@ class YOLO(object):
             boxed_image = letterbox_image(image, new_image_size)
         image_data = np.array(boxed_image, dtype='float32')
 
-        #print(image_data.shape)
-        image_data /= 255.
+        # print(image_data.shape)
+        image_data /= 255. # 归一化
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
-        
+        # 批量添加一维 -> (1,416,416,3) 为了符合网络的输入格式 -> (bitch, w, h, c)
+
         out_boxes, out_scores, out_classes = self.sess.run(
             [self.boxes, self.scores, self.classes],
-            feed_dict={
+            # 目的为了求boxes,scores,classes，具体计算方式定义在generate（）函数内
+            feed_dict={ #喂参数
                 self.yolo_model.input: image_data,
                 self.input_image_shape: [image.size[1], image.size[0]],
                 K.learning_phase(): 0
             })
+
+        # print(out_boxes)
+        # print(out_scores)
+        # print(out_classes)
+
         return_boxs = []
         return_scores = []
+        return_class_name = []
         for i, c in reversed(list(enumerate(out_classes))):
             predicted_class = self.class_names[c]
-            if predicted_class != 'person' :
-                continue
+            # print(predicted_class)
+            # if predicted_class != 'person' :
+            #     continue
             box = out_boxes[i]
             score = out_scores[i]
-            x = int(box[1])  
-            y = int(box[0])  
-            w = int(box[3]-box[1])
-            h = int(box[2]-box[0])
-            if x < 0 :
+            x = int(box[1])
+            y = int(box[0])
+            w = int(box[3] - box[1])
+            h = int(box[2] - box[0])
+            if x < 0:
                 w = w + x
                 x = 0
-            if y < 0 :
+            if y < 0:
                 h = h + y
-                y = 0 
-            return_boxs.append([x,y,w,h])
+                y = 0
+            return_boxs.append([x, y, w, h])
             return_scores.append(score)
-
-        return return_boxs, return_scores
+            return_class_name.append([predicted_class])
+        # print("yolo go out")
+        return return_boxs, return_scores, return_class_name
 
     def close_session(self):
         self.sess.close()
