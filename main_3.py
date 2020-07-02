@@ -40,6 +40,7 @@ def main(yolo):
     writeVideo_flag = True
     asyncVideo_flag = False
 
+
     file_path = 'testvideo2.avi'
 
     # load the COCO class labels our YOLO model was trained on    加载我们的YOLO模型经过培训的COCO类标签
