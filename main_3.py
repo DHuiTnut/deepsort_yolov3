@@ -26,6 +26,7 @@ def main(yolo):
     nn_budget = None
     nms_max_overlap = 1.0
 
+
     # Deep SORT
     model_filename = 'model_data/mars-small128.pb'
     encoder = gdet.create_box_encoder(model_filename, batch_size=1)
